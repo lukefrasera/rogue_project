@@ -368,15 +368,14 @@ int main()
                    case 'p':
                    case 'P':   
                    promptForName( playerName );
-                   openMapFile( lowFile, low );
-                   openMapFile( midFile, mid );
-                   openMapFile( highFile, high );
-                   if( lowSize <= 0 || midSize <= 0 || highSize <= 0 )
+                   
+                   if( openMapFile( lowFile, low ) == -1 || openMapFile( midFile, mid ) || -1 && openMapFile( highFile, high ) == -1 )
                       {
                        displayMapError();
-                       waitForInput( FIXED_WAIT );
                        displayOptions();
                       }
+                   else
+                   {
                    score = startGame( difficulty, low, mid, high, lowSize,
                                                          midSize, highSize, gameField );
                    downloadHighScore( scoreBoard, nameBoard, score, playerName );
@@ -394,6 +393,7 @@ int main()
                    case 'Q':
                    continueGame = false;
                    break;
+                   }
                   }
                }
   
@@ -780,6 +780,11 @@ int openMapFile( const char fileName[], short mapArr[][ GAME_MAX_X ] )
   inf.clear();
   inf.open( fileName );
 
+  if(!inf.good())
+  {
+    return -1;
+  }
+
   for( index = 0; index < GAME_MAX_Y; index++ )
   {
     for( index_2 = 0; index_2 < GAME_MAX_X; index_2++ )
@@ -795,6 +800,8 @@ int openMapFile( const char fileName[], short mapArr[][ GAME_MAX_X ] )
 
     mapArr[y][x] = WALL_SYMBOL;
   }
+  
+  inf.close();
 
   return 0;
 }
@@ -827,6 +834,8 @@ void displayMapError()
           printStringAt( ERR_SCRN_CNTR, yPos, "Maps not found, game play aborted", "CENTER" );
           yPos = yPos + Y_INCREMENT;
           printStringAt( xPos, yPos, "Press any key to continue", "LEFT");
+          
+          waitForInput( FIXED_WAIT );
 
    }
 
@@ -834,8 +843,8 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
                     int lowSize, int midSize, int highSize, short gameField [GAME_MAX_Y][GAME_MAX_X] )
    {
     // initialize variables
-    int xPos = 0, yPos = 0, cloak_counter = 0, sword_counter = 0, spell_counter = 0, treasure_counter = 0, score_counter = 0, randX, randY,
-        floorIndex = 2, mapX, mapY, xVector = 0, yVector = 0, index = 0, x, y, userInput, waitTime = 3, statusX, statusY, row =0, column=0, rowIndex, colIndex;
+    int xPos = 0, yPos = 0, cloak_counter = 0, sword_counter = 0, spell_counter = 0, treasure_counter = 0, score_counter = 0, randX, randY, currentVal, prevFloorIndex = 2,
+        floorIndex = 2, xVector = 0, yVector = 0,preXvect = 0, preYvect = 0, userInput, waitTime = 3, statusX, statusY, rowIndex, colIndex;
     bool alive = true, complete = false;
 
     // set interface color
@@ -932,12 +941,14 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
        }
 
        // generate u and d
+       setColor ( COLOR_WHITE, COLOR_BLUE, SET_BRIGHT);
        while(!complete)
        {
             randX = getRandomBetween(17, 78);
             randY = getRandomBetween(1, 23);
             if(gameField[randY][randX] != WALL_SYMBOL)
             {
+                                      
                 gameField[randY][randX] = UP_CHAR;
                 complete = true;
             }
@@ -971,7 +982,7 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
 
        // update x & y for player
           xPos = 45;
-          yPos = 5;                   
+          yPos = 2;                   
                          
 
     // loop game until player dies or esc is pressed
@@ -979,8 +990,10 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
        {
         // get an input key, waiting for user input
         userInput = waitForInput( waitTime );
-
         // if user input, set direction, otherwise ignore
+
+        preXvect = xVector;
+        preYvect = yVector;
         switch( userInput )
            {
             case KB_RIGHT_ARROW:
@@ -1006,10 +1019,7 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
             case KB_ESCAPE:
                alive = false;
            }
-
-       // move the character
-       move( xPos, yPos, xVector, yVector );
-
+           
        // print game field
        for(rowIndex = 0; rowIndex < GAME_MAX_Y; rowIndex++ )
        {
@@ -1017,11 +1027,11 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
         {
           if( gameField[rowIndex][colIndex] == SPACE )
           {
-            setColor(COLOR_WHITE, COLOR_WHITE, SET_BRIGHT);
+            setColor(COLOR_BLACK, COLOR_WHITE, SET_BRIGHT);
           }
-          else if(gameField[rowIndex][colIndex] == WALL_SYMBOL)
+          else if(gameField[rowIndex][colIndex] == UP_CHAR || gameField[rowIndex][colIndex] == DOWN_CHAR )
           {
-            setColor(COLOR_BLUE, COLOR_WHITE, SET_BRIGHT);
+            setColor(COLOR_WHITE, COLOR_BLUE, SET_BRIGHT);
           }
           else if(gameField[rowIndex][colIndex] == CLOAK || gameField[rowIndex][colIndex] == SWORD || gameField[rowIndex][colIndex] == SPELL)
           {
@@ -1035,24 +1045,226 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
           {
             setColor(COLOR_YELLOW, COLOR_WHITE, SET_BRIGHT);
           }
-
-          printCharAt( colIndex + 17, rowIndex +1, gameField [rowIndex][colIndex]);
+          else if(gameField[rowIndex][colIndex] == WALL_SYMBOL)
+          {
+            setColor(COLOR_BLUE, COLOR_WHITE, SET_BRIGHT);
+          }
+          if( gameField[rowIndex][colIndex] <= 127)
+          {
+           printCharAt( colIndex + 17, rowIndex +1, (char)gameField [rowIndex][colIndex]);
+          }
+          else 
+          {
+            printSpecialCharAt ( colIndex + 17, rowIndex +1, (char)gameField [rowIndex][colIndex]);
+          }
         }
        }
 
+       currentVal = gameField [yPos - 1 + yVector][xPos - 17 + xVector];
+
+       // if character moves over spawned object, check for effect ( status )
+       if( currentVal == HOLE)
+          {
+           if( cloak_counter == 0)
+             {
+               alive = false;
+             }
+           else
+             {
+               cloak_counter--;
+               score_counter--;
+               gameField [yPos - 1 + yVector][xPos - 17 + xVector] = SPACE;
+             }
+          }
+
+       if( currentVal == CLOAK)
+          {
+            cloak_counter++;
+            score_counter++;
+            gameField [yPos - 1 + yVector][xPos - 17 + xVector] = SPACE;
+          }
+          
+       if( currentVal == SWORD)
+          {
+            sword_counter++;
+            score_counter++;
+            gameField [yPos - 1 + yVector][xPos - 17 + xVector] = SPACE;           
+          }
+
+       if( currentVal == SPELL)
+          {
+            spell_counter++;
+            score_counter++;
+            gameField [yPos - 1 + yVector][xPos - 17 + xVector] = SPACE;
+          }
+          
+       if( currentVal == MONSTER)
+          {
+           if( sword_counter == 0)
+             {
+               alive = false;       
+             }
+           else
+             {
+               sword_counter--;
+               score_counter--;
+               gameField [yPos - 1 + yVector][xPos - 17 + xVector] = SPACE;
+             }
+          }
+
+        if( currentVal == TREASURE)
+        {
+            score_counter += 5;
+            treasure_counter++;
+            gameField [yPos - 1 + yVector][xPos - 17 + xVector] = SPACE;
+        }  
+        
+        if( currentVal == WALL_SYMBOL)
+        {
+            if( spell_counter == 0 )
+            {
+              xVector = 0;
+              yVector = 0;
+            }
+            else 
+            {
+                spell_counter--;
+            }
+        }
+        
+        prevFloorIndex = floorIndex;
+        
+        if( currentVal == UP_CHAR )
+        {
+            floorIndex++;
+        }
+            
+        if( currentVal == DOWN_CHAR )
+        {
+            floorIndex--;
+        }          
+        
+        if( prevFloorIndex != floorIndex )
+        {
+         for(int i = 0; i < GAME_MAX_Y; i++ )
+         {
+            for( int j = 0; j < GAME_MAX_X; j++ )
+            {
+                if( floorIndex == 1)
+                {
+                  gameField[i][j] = low[i][j];
+                }
+                if( floorIndex == 2)
+                {
+                  gameField[i][j] = mid[i][j];
+                }
+                if( floorIndex == 3)
+                {
+                  gameField[i][j] = high[i][j];
+                }
+            }     
+         }
+           xPos = 45;
+           yPos = 3;    
+           xVector = 0;
+           yVector = 0;
+           complete = false;
+           if( floorIndex == 3)
+           {
+
+                complete = false;
+
+               while(!complete)
+               {
+                    randX = getRandomBetween(17, 78);
+                    randY = getRandomBetween(1, 23);
+                    if(gameField[randY][randX] != WALL_SYMBOL && gameField[randY][randX] != UP_CHAR)
+                    {
+                        gameField[randY][randX] = DOWN_CHAR;
+                        complete = true;
+                    }
+               }    
+           }    
+
+        if( floorIndex == 2)
+        {
+            while(!complete)
+           {
+                randX = getRandomBetween(17, 78);
+                randY = getRandomBetween(1, 23);
+                if(gameField[randY][randX] != WALL_SYMBOL)
+                {
+                                          
+                    gameField[randY][randX] = UP_CHAR;
+                    complete = true;
+                }
+           }
+           complete = false;
+
+           while(!complete)
+           {
+                randX = getRandomBetween(17, 78);
+                randY = getRandomBetween(1, 23);
+                if(gameField[randY][randX] != WALL_SYMBOL && gameField[randY][randX] != UP_CHAR)
+                {
+                    gameField[randY][randX] = DOWN_CHAR;
+                    complete = true;
+                }
+           }
+        }
+
+        if( floorIndex == 1)
+        {
+                   while(!complete)
+           {
+                randX = getRandomBetween(17, 78);
+                randY = getRandomBetween(1, 23);
+                if(gameField[randY][randX] != WALL_SYMBOL)
+                {
+                                          
+                    gameField[randY][randX] = UP_CHAR;
+                    complete = true;
+                }
+           }
+           complete = false;
+        }
+    }
+            
+            
+    // if dead
+    if ( alive == false )
+       {
+           move( xPos, yPos, 0, 0 );
+       }
+    else
+     {
+       // move the character
+       if( preXvect == xVector && preYvect == yVector && userInput != ERR )
+       {
+           move( xPos, yPos, 0, 0 );
+       }
+       else
+       {
+           move( xPos, yPos, xVector, yVector );
+       }
        // spawn random generated objects
           // function: spawnObject
        spawnObject( gameField );
-
-       // if character moves over spawned object, check for effect ( status )
-
+     }
        
          // set x and y position for cloak counter
            statusX = 13;
            statusY = 4;
-
-       }
-    while( alive == true );
+           printIntAt(statusX, statusY, cloak_counter, "RIGHT");
+           statusY++;
+           printIntAt(statusX, statusY, sword_counter, "RIGHT");
+           statusY++;
+           printIntAt(statusX, statusY, spell_counter, "RIGHT");
+           statusY+=2;
+           printIntAt(statusX, statusY, treasure_counter, "RIGHT");
+           statusY+=2;      
+           printIntAt(statusX, statusY, score_counter, "RIGHT");
+       }while( alive == true );
 
     // display game over screen
        // update x and y positions
@@ -1068,7 +1280,8 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
        // update x and y positions for text
        statusX = 7;
        statusY = 17;
-
+       
+       
        // print GAME ENDS
        printStringAt( statusX, statusY, "GAME", "CENTER");
        statusY = statusY + Y_INCREMENT;
@@ -1082,67 +1295,72 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
 void spawnObject( short gameField [] [GAME_MAX_X] )
    {
     // initialize variables
-       int itemNum, randX, randY, counter = 0;
+       int itemNum, randX, randY, index = 0;
+       bool counter = true;
 
     // generate random number
        // function: getRandomBetween
     itemNum = getRandomBetween( ONE, MAX_SPAWN);
 
     // loop while counter < 1
-    while (counter << ONE)
+    while (counter)
        {
         // generate random x position
-        randX = getRandomBetween( ZERO, MAX_RAND_X);
+        randX = getRandomBetween( ZERO, GAME_MAX_X);
 
         // generate random y position
-        randY = getRandomBetween( ZERO, MAX_RAND_Y);
+        randY = getRandomBetween( ZERO, GAME_MAX_Y);
 
         // spawn item
            // test if position in array == space
-           if( gameField [randX] [randY] == SPACE )  
+           if( gameField [randY] [randX] == SPACE )  
               { 
                // and itemNum is between 1 and 35, print hole, increment counter
                if( itemNum >= ONE && itemNum <= MAX_HOLE)
                   {
-                   gameField [randX][randY] = HOLE;
-                   counter++;
+                   gameField [randY][randX] = HOLE;
+                   counter = false;
                   }
 
                // and itemNum is between 36 and 45, print cloak, increment counter
-               else if( itemNum >= MIN_CLOAK && itemNum <= MAX_CLOAK)
+               if( itemNum >= MIN_CLOAK && itemNum <= MAX_CLOAK)
                   {
-                   gameField [randX][randY] = CLOAK;
-                   counter++;
+                   gameField [randY][randX] = CLOAK;
+                   counter = false;
                   }
 
                // and itemNum is between 46 and 50, print treasure, increment counter
-               else if( itemNum >= MIN_TREASURE && itemNum <= MAX_TREASURE)
+               if( itemNum >= MIN_TREASURE && itemNum <= MAX_TREASURE)
                   {
-                   gameField [randX][randY] = TREASURE;
-                   counter++;
+                   gameField [randY][randX] = TREASURE;
+                   counter = false;
                   }
 
                // and itemNum is between 51 and 60, print spell, increment counter
-               else if( itemNum >= MIN_SPELL && itemNum <= MAX_SPELL)
+               if( itemNum >= MIN_SPELL && itemNum <= MAX_SPELL)
                   {
-                   gameField [randX][randY] = SPELL;
-                   counter++;
+                   gameField [randY][randX] = SPELL;
+                   counter = false;
                   }
 
                // and itemNum is between 61 and 85, print monster, increment counter
-               else if( itemNum >= MIN_MONSTER && itemNum <= MAX_MONSTER)
+               if( itemNum >= MIN_MONSTER && itemNum <= MAX_MONSTER)
                   {
-                   gameField [randX][randY] = MONSTER;
-                   counter++;
+                   gameField [randY][randX] = MONSTER;
+                   counter = false;
                   }     
 
                // and itemNum is between 86 and 95, print sword, increment counter
-               else if( itemNum >= MIN_SWORD && itemNum <= MAX_SWORD)
+               if( itemNum >= MIN_SWORD && itemNum <= MAX_SWORD)
                   {
-                   gameField [randX][randY] = SWORD;
-                   counter++;
+                   gameField [randY][randX] = SWORD;
+                   counter = false;
                   }
-
+                   index++;
+                   if( index > 2000 )
+                   {
+                      counter = false;
+                   }
                // and itemNum is between 96 and 100, counter = 0
               }
        }
@@ -1154,11 +1372,11 @@ int getRandomBetween( int lowVal, int highVal )
 
        // initialize range value to inclusive difference 
        //   between low and high limits
-       int range = highVal - lowVal + 1;
 
     // return randomly generated value between low and high, starting at low
        // function: rand
-    return ( rand() % range + lowVal );
+    return ( (int)((rand() + lowVal) % highVal ));
+
    }
 
 bool move( int &xPos, int &yPos, int xVect, int yVect )
@@ -1169,8 +1387,8 @@ bool move( int &xPos, int &yPos, int xVect, int yVect )
 
     // if x vector is live, test for acceptable movement limits
     if( ( xVect != 0 ) // is meant to move
-          && ( xPos + xVect >= SCRN_MIN_X ) // won't go off left side of screen 
-               && ( xPos + xVect <= SCRN_MAX_X )  ) // won't go off right side of screen
+          && ( xPos + xVect >= 17 ) // won't go off left side of screen 
+               && ( xPos + xVect <= SCRN_MAX_X-1 )  ) // won't go off right side of screen
        {
         // cover up the old marker
         setColor( COLOR_BLACK, COLOR_WHITE, SET_BRIGHT );
@@ -1185,8 +1403,8 @@ bool move( int &xPos, int &yPos, int xVect, int yVect )
 
     // if y vector is live, test for acceptable movement limits
     else if( ( yVect != 0 ) // is meant to move
-               && ( yPos + yVect >= SCRN_MIN_Y ) // won't go off top of screen (!= WALL_SYMBOL)?
-                    && ( yPos + yVect <= SCRN_MAX_Y ) ) // won't go off bottom of screen
+               && ( yPos + yVect >= SCRN_MIN_Y+1 ) // won't go off top of screen (!= WALL_SYMBOL)?
+                    && ( yPos + yVect <= SCRN_MAX_Y-1 ) ) // won't go off bottom of screen
        {
         // cover up the old marker
         setColor( COLOR_BLACK, COLOR_WHITE, SET_BRIGHT );
@@ -1335,35 +1553,18 @@ void displayHighScore( int scoreBoard[], char nameBoard[][ NAME_MAX ] )
 void displaySquare()
    {
     // initialize function/variables
-    int counter;
-    int leftUpperX = 16;
-    int leftUpperY = 0;
-    int rightLowerX = 79;
-    int rightLowerY = 24;
+    int row = 0, column = 16;
 
     // set color
     setColor( COLOR_BLUE, COLOR_WHITE, SET_BRIGHT );
-    
-    // clear screen in shape of box
-    clearScreen( leftUpperX, leftUpperY, rightLowerX, rightLowerY );
 
     // iterate from left to right across box
-    for( counter = leftUpperX; counter < leftUpperX; counter++ )
+    for( row = 0; row < SCRN_MAX_Y+1; row++ )
        {
-        // print top frame character
-        printSpecialCharAt( counter, leftUpperY, WALL_SYMBOL );
-
-        // print bottom frame character
-        printSpecialCharAt( counter, rightLowerY, WALL_SYMBOL );
-       }
-    
-    for( counter = leftUpperY; counter < leftUpperY; counter++ )
-       {
-        // print left frame character
-        printSpecialCharAt( leftUpperX, counter, WALL_SYMBOL );
-
-        // print right frame character
-        printSpecialCharAt( rightLowerX, counter, WALL_SYMBOL );
+        for( column = 16; column < SCRN_MAX_X+1; column++)
+         {
+           printSpecialCharAt(column, row, WALL_SYMBOL);
+         }     
        }
    }
 
