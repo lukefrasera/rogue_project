@@ -1,6 +1,7 @@
 // Header Files
 #include <fstream>
 #include "formatted_console_io_V18.h"
+#include <iostream>
 
 using namespace std;
 
@@ -378,6 +379,7 @@ int main()
                    {
                    score = startGame( difficulty, low, mid, high, lowSize,
                                                          midSize, highSize, gameField );
+                   uploadHighScore( scoreFile, scoreBoard, nameBoard );
                    downloadHighScore( scoreBoard, nameBoard, score, playerName );
                    break;
 
@@ -1433,9 +1435,10 @@ void uploadHighScore( char fileName[], int scoreBoard[], char nameBoard[][ NAME_
     // initialize variables
        ifstream inf;
        char trash;
+       int index = 0;
 
        inf.clear();
-       inf.openfile(filename);
+       inf.open(fileName);
 
        if( !inf.good())
        {
@@ -1458,24 +1461,23 @@ void uploadHighScore( char fileName[], int scoreBoard[], char nameBoard[][ NAME_
             inf >> nameBoard[index][i];
             if( nameBoard[index][i] == '\n')
             {
-              nameboard[index][i] = '\0';
+              nameBoard[index][i] = '\0';
               break;
             }
           }
           index++;
         }
        }
-
-       for( int i = 0; i < 10; i++)
+       
+       for( int i = index; i < 10; i++ )
        {
-        cout << scoreBoard[i] << ", ";
-
-        for( int j = 0; j < 20; j++)
-        {
-          cout << nameBoard[i][j];
+            scoreBoard[i] = 0;
+            
+            for( int j = 0; j < 20; j++ )
+            {
+                nameBoard[i][j] = '\0';
+            }   
         }
-        cout << endl;
-       }
 
     // close file
        // function: inf.close
@@ -1487,7 +1489,7 @@ void downloadHighScore( int scoreBoard[], char nameBoard[][NAME_MAX], int score,
     // initialize variables
 	ofstream fout;
 	int index = 0;
-    char fileName [STD_STR_LEN] = "scores.txt";
+    const char fileName[] = "scores.txt";
 
     // sort scores
        // function: sortScores
@@ -1508,9 +1510,20 @@ void downloadHighScore( int scoreBoard[], char nameBoard[][NAME_MAX], int score,
 		// store score and comma to file
 		fout << scoreBoard[index] << ",";
 		
-		// loop name and store to file
-		fout << nameBoard[index] << '\n';
-	   }
+		  // loop name and store to file
+		  for( int i = 0; i < 20; i++ )
+		  {
+              if( nameBoard[index][i] != '\0' ){
+                fout << nameBoard[index][i];
+            }
+            else{
+              break;
+            }
+          }
+          fout << '\n';
+          index++;
+        }
+	   
 
 	// close file
 	fout.close();
