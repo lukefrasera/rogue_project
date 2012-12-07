@@ -1015,6 +1015,27 @@ int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_
        {
         for(colIndex = 0; colIndex < GAME_MAX_X; colIndex++)
         {
+          if( gameField[rowIndex][colIndex] == SPACE )
+          {
+            setColor(COLOR_WHITE, COLOR_WHITE, SET_BRIGHT);
+          }
+          else if(gameField[rowIndex][colIndex] == WALL_SYMBOL)
+          {
+            setColor(COLOR_BLUE, COLOR_WHITE, SET_BRIGHT);
+          }
+          else if(gameField[rowIndex][colIndex] == CLOAK || gameField[rowIndex][colIndex] == SWORD || gameField[rowIndex][colIndex] == SPELL)
+          {
+            setColor(COLOR_GREEN, COLOR_WHITE, SET_BRIGHT);
+          }
+          else if(gameField[rowIndex][colIndex] == HOLE || gameField[rowIndex][colIndex] == MONSTER )
+          {
+            setColor(COLOR_RED, COLOR_WHITE, SET_BRIGHT);
+          }
+          else if(gameField[rowIndex][colIndex] == TREASURE)
+          {
+            setColor(COLOR_YELLOW, COLOR_WHITE, SET_BRIGHT);
+          }
+
           printCharAt( colIndex + 17, rowIndex +1, gameField [rowIndex][colIndex]);
         }
        }
