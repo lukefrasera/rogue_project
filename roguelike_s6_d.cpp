@@ -1432,36 +1432,50 @@ void uploadHighScore( char fileName[], int scoreBoard[], char nameBoard[][ NAME_
    {
     // initialize variables
        ifstream inf;
-       int index = 0, value, numChar = 0;
-       char name, dummy;
-    
-    // clear file
-       // function: inf.clear
-          inf.clear();
+       char trash;
 
-    // open downloaded score file
-       // function: inf.open
-          inf.open( fileName );
+       inf.clear();
+       inf.openfile(filename);
 
-    // input char values into char array
-       // function: inf.good   
-          inf >> value;         
-         
-          while( inf.good() )
-             {
-              scoreBoard[ index ] = value;
-              inf >> dummy;
-              inf >> name;
-              while( name != '\n' )
-                 {
-                  nameBoard[ index ][ numChar ] = name;
-                  inf >> name;
-                  numChar++;
-                 }
-               numChar = 0;
-               inf >> value;
-               index++;
-             }
+       if( !inf.good())
+       {
+        for( int i = 0; i < SCORE_NUMBERS; i++)
+        {
+          scoreBoard[i] = 0;
+          for( int j = 0; j < NAME_MAX; j++)
+          {
+            nameBoard[i][j] = '\0';
+          }
+        }
+       }
+       else
+       {
+        while( inf.peek() != EOF)
+        {
+          inf >> scoreBoard[index] >> trash;
+          for( int i = 0; i < NAME_MAX; i++ )
+          {
+            inf >> nameBoard[index][i];
+            if( nameBoard[index][i] == '\n')
+            {
+              nameboard[index][i] = '\0';
+              break;
+            }
+          }
+          index++;
+        }
+       }
+
+       for( int i = 0; i < 10; i++)
+       {
+        cout << scoreBoard[i] << ", ";
+
+        for( int j = 0; j < 20; j++)
+        {
+          cout << nameBoard[i][j];
+        }
+        cout << endl;
+       }
 
     // close file
        // function: inf.close
