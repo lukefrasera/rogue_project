@@ -185,7 +185,7 @@ Device Output: none
 Dependencies: formatted console v_18, fstream I/O tools
 Developer: Jennifer Tang
 */
-int openMapFile( char name[], short mapArr[][ MAX_COL ] );
+int openMapFile( const char fileName[], short mapArr[][ GAME_MAX_X ] );
 
 /*
 Name: displayMapError
@@ -211,8 +211,8 @@ Device Output: game
 Dependencies: formatted console v_18, fstream I/O tools
 Developer: Jennifer Tang & Derek Dalbey
 */
-int startGame( int difficulty, short low[][ MAX_COL ], short mid[][ MAX_COL ], short high[][ MAX_COL ],
-                    int lowSize, int midSize, int highSize, short gameField[GAME_MAX_X] [GAME_MAX_Y] );
+int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_X ], short high[][ GAME_MAX_X ],
+                    int lowSize, int midSize, int highSize, short gameField[GAME_MAX_X] [GAME_MAX_X] );
 
 /*
 Name: spawnObject
@@ -225,7 +225,7 @@ Device Output: game
 Dependencies: formatted console v_18
 Developer: Derek Dalbey
 */
-void spawnObject( short gameField [GAME_MAX_X][GAME_MAX_Y]);
+void spawnObject( short gameField [][GAME_MAX_X]);
 
 /*
 Name: getRandomBetween
@@ -327,7 +327,7 @@ int main()
             lowFile[ HUNDRED ] = "lowlevel.txt", midFile[ HUNDRED ] = "midlevel.txt",
             highFile[ HUNDRED ] = "highlevel.txt", nameBoard [ MAX_ITEMS][NAME_MAX];
        int difficulty, score, lowSize, midSize, highSize, scoreBoard [MAX_ITEMS];
-       short low[ MAP_SIZE ][ MAX_COL ], mid[ MAP_SIZE ][ MAX_COL ], high[ MAP_SIZE ][ MAX_COL ], gameField [GAME_MAX_X] [GAME_MAX_Y];
+       short low[ GAME_MAX_Y ][ GAME_MAX_X ], mid[ GAME_MAX_Y ][ GAME_MAX_X ], high[ GAME_MAX_Y ][ GAME_MAX_X ], gameField [GAME_MAX_Y] [GAME_MAX_X];
        bool continueGame = true;
        
        // seed random generator
@@ -368,9 +368,9 @@ int main()
                    case 'p':
                    case 'P':   
                    promptForName( playerName );
-                   lowSize = openMapFile( lowFile, low );
-                   midSize = openMapFile( midFile, mid );
-                   highSize = openMapFile( highFile, high );
+                   openMapFile( lowFile, low );
+                   openMapFile( midFile, mid );
+                   openMapFile( highFile, high );
                    if( lowSize <= 0 || midSize <= 0 || highSize <= 0 )
                       {
                        displayMapError();
@@ -771,7 +771,7 @@ void displayOptions()
 
   }
 
-int openMapFile( char fileName[], short mapArr[][ MAX_COL ] )
+int openMapFile( const char fileName[], short mapArr[][ GAME_MAX_X ] )
 {
   ifstream inf;
   int x, y;
@@ -780,21 +780,22 @@ int openMapFile( char fileName[], short mapArr[][ MAX_COL ] )
   inf.clear();
   inf.open( fileName );
 
-  for( index = 0; index < GAME_MAX_X; index++ )
+  for( index = 0; index < GAME_MAX_Y; index++ )
   {
-    for( index_2 = 0; index_2 < GAME_MAX_Y; index_2++ )
+    for( index_2 = 0; index_2 < GAME_MAX_X; index_2++ )
     {
       mapArr[index][index_2] = SPACE;
     }
   }
 
 
-  while( inf.peak() != EOF )
+  while( inf.peek() != EOF )
   {
     inf >> x >> y;
 
-    mapArr[x][y] = WALL_SYMBOL;
+    mapArr[y][x] = WALL_SYMBOL;
   }
+
   return 0;
 }
 
@@ -829,13 +830,13 @@ void displayMapError()
 
    }
 
-int startGame( int difficulty, short low[][ MAX_COL ], short mid[][ MAX_COL ], short high[][ MAX_COL ],
-                    int lowSize, int midSize, int highSize, short gameField [GAME_MAX_X][GAME_MAX_Y] )
+int startGame( int difficulty, short low[][ GAME_MAX_X ], short mid[][ GAME_MAX_X ], short high[][ GAME_MAX_X ],
+                    int lowSize, int midSize, int highSize, short gameField [GAME_MAX_Y][GAME_MAX_X] )
    {
     // initialize variables
-    int xPos = 0, yPos = 0, cloak_counter = 0, sword_counter = 0, spell_counter = 0, treasure_counter = 0, score_counter = 0,
-        floorIndex = 2, mapX, mapY, xVector = 0, yVector = 0, index = 0, x, y, userInput, waitTime = 3, statusX, statusY, row =0, column=0;
-    bool alive = true;
+    int xPos = 0, yPos = 0, cloak_counter = 0, sword_counter = 0, spell_counter = 0, treasure_counter = 0, score_counter = 0, randX, randY,
+        floorIndex = 2, mapX, mapY, xVector = 0, yVector = 0, index = 0, x, y, userInput, waitTime = 3, statusX, statusY, row =0, column=0, rowIndex, colIndex;
+    bool alive = true, complete = false;
 
     // set interface color
        // function: setColor
@@ -921,13 +922,39 @@ int startGame( int difficulty, short low[][ MAX_COL ], short mid[][ MAX_COL ], s
 
        // spawn map
           // function: printSpecialCharAt
-             while( index < midSize )
-                   {
-                    mid[ index ][ x ] = mapX;
-                    mid[ index ][ y ] = mapY;
-                    printCharAt( mapX, mapY, WALL_SYMBOL );
-                    index++;
-                   }            
+
+       for(rowIndex = 0; rowIndex < GAME_MAX_Y; rowIndex++ )
+       {
+        for(colIndex = 0; colIndex < GAME_MAX_X; colIndex++)
+        {
+          gameField [rowIndex][colIndex] = mid[rowIndex][colIndex];
+        }
+       }
+
+       // generate u and d
+       while(!complete)
+       {
+            randX = getRandomBetween(17, 78);
+            randY = getRandomBetween(1, 23);
+            if(gameField[randY][randX] != WALL_SYMBOL)
+            {
+                gameField[randY][randX] = UP_CHAR;
+                complete = true;
+            }
+       }
+       complete = false;
+
+       while(!complete)
+       {
+            randX = getRandomBetween(17, 78);
+            randY = getRandomBetween(1, 23);
+            if(gameField[randY][randX] != WALL_SYMBOL && gameField[randY][randX] != UP_CHAR)
+            {
+                gameField[randY][randX] = DOWN_CHAR;
+                complete = true;
+            }
+       }
+
 
        // update difficulty waitTime
           // if difficulty = 3, set waitTime to 1;
@@ -983,17 +1010,18 @@ int startGame( int difficulty, short low[][ MAX_COL ], short mid[][ MAX_COL ], s
        // move the character
        move( xPos, yPos, xVector, yVector );
 
+       // print game field
+       for(rowIndex = 0; rowIndex < GAME_MAX_Y; rowIndex++ )
+       {
+        for(colIndex = 0; colIndex < GAME_MAX_X; colIndex++)
+        {
+          printCharAt( colIndex + 17, rowIndex +1, gameField [rowIndex][colIndex]);
+        }
+       }
+
        // spawn random generated objects
           // function: spawnObject
        spawnObject( gameField );
-
-       for( row = 0; row < GAME_MAX_X; row++)
-          {
-           for( column = 0; column < GAME_MAX_Y; column++)
-              {
-               printIntAt(17, 1, gameField[ row ][ column ], "LEFT" );
-              }
-          }
 
        // if character moves over spawned object, check for effect ( status )
 
@@ -1030,7 +1058,7 @@ int startGame( int difficulty, short low[][ MAX_COL ], short mid[][ MAX_COL ], s
 
    }
 
-void spawnObject( short gameField [GAME_MAX_X] [GAME_MAX_Y] )
+void spawnObject( short gameField [] [GAME_MAX_X] )
    {
     // initialize variables
        int itemNum, randX, randY, counter = 0;

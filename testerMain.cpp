@@ -1,51 +1,36 @@
 #include <iostream>
 #include <fstream>
 
+using namespace std;
 
-int openMapFile( char fileName[], short mapArr[][ MAX_COL ] )
-   {
-    // initialize variables
-       ifstream inf;
-       int mapSize = 0, rowIndex = 0;
+const int MAX_ROWS = 22;
+const int MAX_COL = 62;
+const char fileName[]= "midlevel.txt";
+const char SPACE = ' ';
+const int WALL_SYMBOL = 176;
 
-    // clear file
-       // function: inf.clear
-          inf.clear();
-
-    // open file
-       // function: inf.open
-          inf.open( fileName );
-
-    // extract data to map array
-       // function: while
-
-          while( inf.good() )
-            {     
-              // get next character, place in array
-                // function: inf
-                  inf >> mapArr [ rowIndex ][COLUMN_ONE] >> mapArr [ rowIndex ][COLUMN_TWO];
-                  rowIndex++;
-                  mapSize++;
-                  mapSize++;
-            }         
-          
-    // close file
-       // function: inf.close
-          inf.close();
-
-    // return the size of the map
-       return mapSize;
-   }
-
-
-int openMapFile( char fileName[], short mapArr[][ MAX_COL ]);
+int openMapFile( const char fileName[], short mapArr[][ MAX_COL ]);
 
 int main()
 {
+  short gameArr [MAX_ROWS][MAX_COL];
+
+  openMapFile( fileName, gameArr );
+
+  for(int i = 0; i < 22; i++)
+  {
+    for(int j = 0; j< 62; j++)
+    {
+      cout << gameArr[i][j]  << " ";
+    }
+    cout << endl;
+  }
+system ("PAUSE");
+
 	return 0;
 }
 
-int openMapFile( char fileName[], short mapArr[][ MAX_COL ] )
+int openMapFile( const char fileName[], short mapArr[][ MAX_COL ] )
 {
 	ifstream inf;
 	int x, y;
@@ -54,20 +39,21 @@ int openMapFile( char fileName[], short mapArr[][ MAX_COL ] )
 	inf.clear();
 	inf.open( fileName );
 
-	for( index = 0; index < GAME_MAX_X; index++ )
+	for( index = 0; index < MAX_ROWS; index++ )
 	{
-		for( index_2 = 0; index_2 < GAME_MAX_Y; index_2++ )
+		for( index_2 = 0; index_2 < MAX_COL; index_2++ )
 		{
 			mapArr[index][index_2] = SPACE;
 		}
 	}
 
 
-	while( inf.peak() != EOF )
+	while( inf.peek() != EOF )
 	{
 		inf >> x >> y;
 
-		mapArr[x][y] = WALL_SYMBOL;
+		mapArr[y][x] = WALL_SYMBOL;
 	}
+
 	return 0;
 }
